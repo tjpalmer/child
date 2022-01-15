@@ -18,17 +18,20 @@ var smiley = [
   0b11000011,
 ]
 
+var tick = 0
+var tickB = 0
+PALETTE[] = [uint32(0x161f38), 0x841e35, 0xb4742f, 0xf3eac0]
+
 proc update {.exportWasm.} =
-  PALETTE[0] = 0x142228
-  PALETTE[1] = 0x604000
-  PALETTE[2] = 0xb2893c
-  PALETTE[3] = 0xf4ebd0
-  DRAW_COLORS[] = 2
+  tick = (tick + 1) mod 3
+  tickB = (tickB + 1) mod 10
+  DRAW_COLORS[] = 4
   text("Hello from Nim!", 10, 10)
+  DRAW_COLORS[] = 2
 
   var gamepad = GAMEPAD1[]
   if bool(gamepad and BUTTON_1):
-    DRAW_COLORS[] = 4
+    DRAW_COLORS[] = if tick == 0: 2 elif tickB == 0: 4 else: 1
   
   blit(addr smiley[0], 76, 76, 8, 8, BLIT_1BPP)
   DRAW_COLORS[] = 3
