@@ -1,4 +1,6 @@
 import cart/wasm4
+import std/math
+import std/random
 
 # Call NimMain so that global Nim code in modules will be called, 
 # preventing unexpected errors
@@ -18,21 +20,52 @@ var smiley = [
   0b11000011,
 ]
 
-var tick = 0
-var tickB = 0
+# var tick = 0
+# var tickB = 0
 PALETTE[] = [uint32(0x161f38), 0x841e35, 0xb4742f, 0xf3eac0]
 
-proc update {.exportWasm.} =
-  tick = (tick + 1) mod 3
-  tickB = (tickB + 1) mod 10
-  DRAW_COLORS[] = 4
-  text("Hello from Nim!", 10, 10)
-  DRAW_COLORS[] = 2
+type
+  Tree = object
+    baseX: int32
+    baseY: int32
+    height: int32
+    radius: int32
 
-  var gamepad = GAMEPAD1[]
-  if bool(gamepad and BUTTON_1):
-    DRAW_COLORS[] = if tick == 0: 2 elif tickB == 0: 4 else: 1
-  
-  blit(addr smiley[0], 76, 76, 8, 8, BLIT_1BPP)
+proc drawTree(tree: Tree) =
+  for y in 0..tree.height - 1:
+    let r = int32(round(tree.radius * (tree.height - y) / tree.height))
+    for x in -r..r:
+      let rf = x / r
+      DRAW_COLORS[] = if rf < -0.9: 4 elif rf > 0.9: 2 else: 3
+      # FRAMEBUFFER[1] = 0x23
+      hline(tree.baseX + x, tree.baseY - y, 1)
+
+proc randi(low: int, high: int): int32 =
+  return int32(rand(high - low) + low)
+
+proc update {.exportWasm.} =
+  # tick = (tick + 1) mod 3
+  # tickB = (tickB + 1) mod 10
+  # DRAW_COLORS[] = 4
+  # text("Hello from Nim!", 10, 10)
+  randomize(0x1337)
+  DRAW_COLORS[] = uint16(rand(2..4))
   DRAW_COLORS[] = 3
-  text("Press X to blink", 16, 90)
+  for i in 1..10:
+    let
+      edge = SCREEN_SIZE - 1
+      tree = Tree(
+        baseX: randi(0, edge),
+        baseY: randi(0, edge),
+        height: randi(20, 80),
+        radius: randi(2, 10),
+      )
+    drawTree(tree)
+
+  # var gamepad = GAMEPAD1[]
+  # if bool(gamepad and BUTTON_1):
+  #   DRAW_COLORS[] = if tick == 0: 2 elif tickB == 0: 4 else: 1
+  
+  # blit(addr smiley[0], 76, 76, 8, 8, BLIT_1BPP)
+  # DRAW_COLORS[] = 3
+  # text("Press X to blink", 16, 90)
