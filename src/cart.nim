@@ -35,8 +35,10 @@ proc drawTree(tree: Tree) =
   for y in 0..tree.height - 1:
     let r = int32(round(tree.radius * (tree.height - y) / tree.height))
     for x in -r..r:
-      let rf = x / r
-      DRAW_COLORS[] = if rf < -0.9: 4 elif rf > 0.9: 2 else: 3
+      let
+        rf = (x / r) ^ 3
+        lim = rand(1.0)
+      DRAW_COLORS[] = if rf < -lim: 4 elif rf > lim: 2 else: 3
       # FRAMEBUFFER[1] = 0x23
       hline(tree.baseX + x, tree.baseY - y, 1)
 
@@ -51,14 +53,15 @@ proc update {.exportWasm.} =
   randomize(0x1337)
   DRAW_COLORS[] = uint16(rand(2..4))
   DRAW_COLORS[] = 3
-  for i in 1..10:
+  for i in 1..100:
     let
       edge = SCREEN_SIZE - 1
+      height = randi(20, 80)
       tree = Tree(
         baseX: randi(0, edge),
         baseY: randi(0, edge),
-        height: randi(20, 80),
-        radius: randi(2, 10),
+        height: height,
+        radius: randi(2, height div 8 + 2),
       )
     drawTree(tree)
 
