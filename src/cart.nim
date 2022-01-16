@@ -9,41 +9,42 @@ proc NimMain {.importc.}
 proc start {.exportWasm.} = 
   NimMain()
 
-var smiley = [
-  0b11000011'u8,
-  0b10000001,
-  0b00100100,
-  0b00100100,
-  0b00000000,
-  0b00100100,
-  0b10011001,
-  0b11000011,
-]
-
 # var tick = 0
 # var tickB = 0
 PALETTE[] = [uint32(0x161f38), 0x841e35, 0xb4742f, 0xf3eac0]
 
 type
+  Color = object
+  Draw = object
   Tree = object
     baseX: int32
     baseY: int32
     height: int32
     radius: int32
 
-proc drawTree(tree: Tree) =
+func randf(high: float): float {.tags: [Rand].} =
+  {.cast(noSideEffect).}:
+    rand(high)
+
+func randi(low: int, high: int): int32 {.tags: [Rand].} =
+  {.cast(noSideEffect).}:
+    int32(rand(high - low) + low)
+
+func drawPixel(color: uint16, x: int32, y: int32) {.tags: [Color, Draw].} =
+  {.cast(noSideEffect).}:
+    DRAW_COLORS[] = color
+    # FRAMEBUFFER[1] = 0x23
+    hline(x, y, 1)
+
+func drawTree(tree: Tree) {.tags: [Color, Draw, Rand].} =
   for y in 0..tree.height - 1:
     let r = int32(round(tree.radius * (tree.height - y) / tree.height))
     for x in -r..r:
       let
         rf = (x / r) ^ 3
-        lim = rand(1.0)
-      DRAW_COLORS[] = if rf < -lim: 4 elif rf > lim: 2 else: 3
-      # FRAMEBUFFER[1] = 0x23
-      hline(tree.baseX + x, tree.baseY - y, 1)
-
-proc randi(low: int, high: int): int32 =
-  return int32(rand(high - low) + low)
+        lim = randf(1.0)
+        color = uint16(if rf < -lim: 4 elif rf > lim: 2 else: 3)
+      drawPixel(color, tree.baseX + x, tree.baseY - y)
 
 proc update {.exportWasm.} =
   # tick = (tick + 1) mod 3
