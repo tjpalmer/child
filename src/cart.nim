@@ -11,7 +11,7 @@ proc start {.exportWasm.} =
 
 # var tick = 0
 # var tickB = 0
-PALETTE[] = [uint32(0x161f38), 0x841e35, 0xb4742f, 0xf3eac0]
+PALETTE[] = [0x161f38'u32, 0x841e35, 0xb4742f, 0xf3eac0]
 
 type
   Color = object
@@ -22,47 +22,61 @@ type
     height: int32
     radius: int32
 
-func randf(high: float): float {.tags: [Rand].} =
-  {.cast(noSideEffect).}:
-    rand(high)
+func randf(rng: var Rand, high: float): float {.tags: [Rand].} =
+  rng.rand(high)
 
-func randi(low: int, high: int): int32 {.tags: [Rand].} =
-  {.cast(noSideEffect).}:
-    int32(rand(high - low) + low)
+func randi(rng: var Rand, low: int, high: int): int32 {.tags: [Rand].} =
+  int32(rng.rand(high - low) + low)
+
+func setColors(colors: uint16) {.tags: [Color].} =
+  DRAW_COLORS[] = colors
 
 func drawPixel(color: uint16, x: int32, y: int32) {.tags: [Color, Draw].} =
-  {.cast(noSideEffect).}:
-    DRAW_COLORS[] = color
-    # FRAMEBUFFER[1] = 0x23
-    hline(x, y, 1)
+  setColors(color)
+  # FRAMEBUFFER[1] = 0x23
+  hline(x, y, 1)
+
+func drawLeaves(tree: Tree) {.tags: [Color, Draw].} =
+  let
+    width = tree.radius * 2 + tree.height div 3
+    height = tree.height div 2
+  setColors(0x22)
+  oval(
+    x = tree.baseX - width div 2,
+    y = tree.baseY - tree.height * 3 div 4 - height div 2,
+    width = uint32(width),
+    height = uint32(height),
+  )
 
 func drawTree(tree: Tree) {.tags: [Color, Draw, Rand].} =
+  var rng = initRand(tree.baseY * SCREEN_SIZE + tree.baseX)
   for y in 0..tree.height - 1:
     let r = int32(round(tree.radius * (tree.height - y) / tree.height))
     for x in -r..r:
       let
         rf = (x / r) ^ 3
-        lim = randf(1.0)
+        lim = rng.randf(1.0'f32)
         color = uint16(if rf < -lim: 4 elif rf > lim: 2 else: 3)
-      drawPixel(color, tree.baseX + x, tree.baseY - y)
+      drawPixel(color = color, x = tree.baseX + x, y = tree.baseY - y)
+  drawLeaves(tree)
 
 proc update {.exportWasm.} =
   # tick = (tick + 1) mod 3
   # tickB = (tickB + 1) mod 10
   # DRAW_COLORS[] = 4
   # text("Hello from Nim!", 10, 10)
-  randomize(0x1337)
+  var rng = initRand(0x1337)
   DRAW_COLORS[] = uint16(rand(2..4))
   DRAW_COLORS[] = 3
-  for i in 1..100:
+  for i in 1..10:
     let
       edge = SCREEN_SIZE - 1
-      height = randi(20, 80)
+      height = rng.randi(20, 80)
       tree = Tree(
-        baseX: randi(0, edge),
-        baseY: randi(0, edge),
+        baseX: rng.randi(0, edge),
+        baseY: rng.randi(0, edge),
         height: height,
-        radius: randi(2, height div 8 + 2),
+        radius: rng.randi(3, height div 10 + 3),
       )
     drawTree(tree)
 
