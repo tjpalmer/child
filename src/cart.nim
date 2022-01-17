@@ -1,6 +1,8 @@
 import cart/wasm4
+import std/algorithm
 import std/math
 import std/random
+import std/sugar
 
 # Call NimMain so that global Nim code in modules will be called, 
 # preventing unexpected errors
@@ -81,16 +83,19 @@ proc update {.exportWasm.} =
   var rng = initRand(0x1337)
   DRAW_COLORS[] = uint16(rand(2..4))
   DRAW_COLORS[] = 3
-  for i in 1..10:
-    let
-      edge = SCREEN_SIZE - 1
-      sizeY = rng.randi(50, 80)
-      tree = Tree(
+  var trees = collect:
+    for i in 1..10:
+      let
+        edge = SCREEN_SIZE - 1
+        sizeY = rng.randi(50, 80)
+      Tree(
         baseX: rng.randi(0, edge),
         baseY: rng.randi(0, edge),
         sizeY: sizeY,
         radius: rng.randi(3, sizeY div 10 + 3),
       )
+  trees.sort(func(a, b: Tree): int = a.baseY - b.baseY)
+  for tree in trees:
     drawTree(tree)
 
   # var gamepad = GAMEPAD1[]
