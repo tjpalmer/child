@@ -19,7 +19,7 @@ type
   Tree = object
     baseX: int32
     baseY: int32
-    height: int32
+    sizeY: int32
     radius: int32
 
 func randf(rng: var Rand, high: float): float {.tags: [Rand].} =
@@ -36,29 +36,42 @@ func drawPixel(color: uint16, x: int32, y: int32) {.tags: [Color, Draw].} =
   # FRAMEBUFFER[1] = 0x23
   hline(x, y, 1)
 
-func drawLeaves(tree: Tree) {.tags: [Color, Draw].} =
+func drawLeaves(rng: var Rand, tree: Tree) {.tags: [Color, Draw, Rand].} =
   let
-    width = tree.radius * 2 + tree.height div 3
-    height = tree.height div 2
+    midX = tree.baseX
+    midY = tree.baseY - tree.sizeY * 3 div 4
+    sizeX = tree.radius * 2 + tree.sizeY div 3
+    sizeY = tree.sizeY div 2
+    radiusX = sizeX div 2
+    radiusY = sizeY div 2
   setColors(0x22)
   oval(
-    x = tree.baseX - width div 2,
-    y = tree.baseY - tree.height * 3 div 4 - height div 2,
-    width = uint32(width),
-    height = uint32(height),
+    x = midX - sizeX div 2,
+    y = midY - sizeY div 2,
+    width = uint32(sizeX),
+    height = uint32(sizeY),
   )
+  for i in 1..sizeX * sizeY div 10:
+    let
+      xf = rng.randf(2.0) - 1
+      yf = rng.randf(2.0) - 1
+    if xf * xf + yf * yf <= 1:
+      let
+        x = int32(xf * float(radiusX)) + midX
+        y = int32(yf * float(radiusY)) + midY
+      drawPixel(3'u16, x, y)
 
 func drawTree(tree: Tree) {.tags: [Color, Draw, Rand].} =
   var rng = initRand(tree.baseY * SCREEN_SIZE + tree.baseX)
-  for y in 0..tree.height - 1:
-    let r = int32(round(tree.radius * (tree.height - y) / tree.height))
+  for y in 0..tree.sizeY - 1:
+    let r = int32(round(tree.radius * (tree.sizeY - y) / tree.sizeY))
     for x in -r..r:
       let
         rf = (x / r) ^ 3
         lim = rng.randf(1.0'f32)
         color = uint16(if rf < -lim: 4 elif rf > lim: 2 else: 3)
       drawPixel(color = color, x = tree.baseX + x, y = tree.baseY - y)
-  drawLeaves(tree)
+  drawLeaves(rng = rng, tree = tree)
 
 proc update {.exportWasm.} =
   # tick = (tick + 1) mod 3
@@ -71,12 +84,12 @@ proc update {.exportWasm.} =
   for i in 1..10:
     let
       edge = SCREEN_SIZE - 1
-      height = rng.randi(20, 80)
+      sizeY = rng.randi(50, 80)
       tree = Tree(
         baseX: rng.randi(0, edge),
         baseY: rng.randi(0, edge),
-        height: height,
-        radius: rng.randi(3, height div 10 + 3),
+        sizeY: sizeY,
+        radius: rng.randi(3, sizeY div 10 + 3),
       )
     drawTree(tree)
 
