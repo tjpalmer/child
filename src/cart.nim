@@ -11,7 +11,7 @@ proc NimMain {.importc.}
 proc start {.exportWasm.} = 
   NimMain()
 
-# var tick = 0
+var tick = 0
 # var tickB = 0
 PALETTE[] = [0x161f38'u32, 0x841e35, 0xb4742f, 0xf3eac0]
 
@@ -80,19 +80,12 @@ func drawTree(tree: Tree) {.tags: [Color, Draw, Rand].} =
 # system.onUnhandledException = proc (errorMsg: string) {.nimcall, gcsafe.} =
 #   discard
 
-proc update {.exportWasm.} =
-  # tick = (tick + 1) mod 3
-  # tickB = (tickB + 1) mod 10
-  # DRAW_COLORS[] = 4
-  # text("Hello from Nim!", 10, 10)
-  var rng = initRand(0x1340)
-  DRAW_COLORS[] = uint16(rand(2..4))
-  DRAW_COLORS[] = 3
-  # var trees = collect:
-  for i in 1..5:
+proc drawTrees(count: int, scaleY: float, seed: int32) {.tags: [Color, Draw, Rand].} =
+  var rng = initRand(seed)
+  for i in 1..count:
     let
       edge = SCREEN_SIZE - 1
-      sizeY = rng.randi(80, 120)
+      sizeY = rng.randi(int32(80 * scaleY), int32(120 * scaleY))
       tree = Tree(
         baseX: rng.randi(0, edge),
         baseY: 120, # rng.randi(0, edge),
@@ -102,6 +95,34 @@ proc update {.exportWasm.} =
   # trees.sort(func(a, b: Tree): int = a.baseY - b.baseY)
   # for tree in trees:
     drawTree(tree)
+
+proc update {.exportWasm.} =
+  tick = (tick + 1) mod 2
+  # tickB = (tickB + 1) mod 10
+  # DRAW_COLORS[] = 4
+  # text("Hello from Nim!", 10, 10)
+  drawTrees(count = 10, scaleY = 0.8, seed = 0x1337)
+  # if tick == 0:
+  #   setColors(0x11)
+  #   rect(0, 0, SCREEN_SIZE, SCREEN_SIZE)
+  drawTrees(count = 5, scaleY = 1.0, seed = 0x1340)
+  # var rng = initRand(0x1340)
+  # # DRAW_COLORS[] = uint16(rand(2..4))
+  # # DRAW_COLORS[] = 3
+  # # var trees = collect:
+  # for i in 1..5:
+  #   let
+  #     edge = SCREEN_SIZE - 1
+  #     sizeY = rng.randi(80, 120)
+  #     tree = Tree(
+  #       baseX: rng.randi(0, edge),
+  #       baseY: 120, # rng.randi(0, edge),
+  #       sizeY: sizeY,
+  #       radius: rng.randi(3, sizeY div 10 + 3),
+  #     )
+  # # trees.sort(func(a, b: Tree): int = a.baseY - b.baseY)
+  # # for tree in trees:
+  #   drawTree(tree)
 
   # var gamepad = GAMEPAD1[]
   # if bool(gamepad and BUTTON_1):
