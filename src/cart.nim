@@ -108,14 +108,12 @@ proc drawTrees(count: int, scale: float, seed: int32) {.tags: [Color, Draw, Rand
 proc ditherFade() {.tags: [Draw, Scroll].} =
   let
     frameWidth = SCREEN_SIZE div 4
-    # posX = getPosX()
     posX = int32(float(getPosX()) * 0.8)
-    # posX = 0
   var offset = 0
-  for y in 0..SCREEN_SIZE:
+  for y in 0..SCREEN_SIZE - 1:
     let mask: uint8 = if (y + posX) mod 2 == 0: 0xCC else: 0x33
     offset += frameWidth
-    for x in 0..frameWidth:
+    for x in 0..frameWidth - 1:
       clearMask(FRAMEBUFFER[][offset + x], mask)
 
 proc update {.exportWasm, tags: [Color, Draw, Rand].} =
