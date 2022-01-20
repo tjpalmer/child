@@ -39,7 +39,7 @@ func drawPixel(color: uint16, x: int32, y: int32) {.tags: [Color, Draw].} =
   # FRAMEBUFFER[1] = 0x23
   hline(x, y, 1)
 
-func drawLeaves(color: uint16, sup: int32, sub: int32, rng: var Rand, tree: Tree) {.tags: [Color, Draw, Rand].} =
+func drawLeaves(color: uint16, scale: float, rng: var Rand, tree: Tree) {.tags: [Color, Draw, Rand].} =
   let
     midX = tree.baseX
     midY = tree.baseY - tree.sizeY * 3 div 4
@@ -55,7 +55,7 @@ func drawLeaves(color: uint16, sup: int32, sub: int32, rng: var Rand, tree: Tree
   #   width = uint32(sizeX),
   #   height = uint32(sizeY),
   # )
-  for i in 1..sizeX * sizeY * sup div sub:
+  for i in 1..int32(float(sizeX * sizeY) * scale):
     let
       xf = rng.randf(2.0) - 1
       yf = rng.randf(2.0) - 1
@@ -75,8 +75,8 @@ func drawTree(tree: Tree) {.tags: [Color, Draw, Rand].} =
         lim = rng.randf(1.0'f32)
         color = uint16(if rf < -lim: 4 elif rf > lim: 2 else: 3)
       drawPixel(color = color, x = tree.baseX + x, y = tree.baseY - y)
-  drawLeaves(color = 2, sup = 3, sub = 1, rng = rng, tree = tree)
-  drawLeaves(color = 3, sup = 1, sub = 10, rng = rng, tree = tree)
+  drawLeaves(color = 2, scale = 2, rng = rng, tree = tree)
+  drawLeaves(color = 3, scale = 0.1, rng = rng, tree = tree)
 
 # system.onUnhandledException = proc (errorMsg: string) {.nimcall, gcsafe.} =
 #   discard
