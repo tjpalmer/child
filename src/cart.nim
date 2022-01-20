@@ -1,5 +1,6 @@
 import cart/wasm4
 import std/algorithm
+import std/bitops
 import std/math
 import std/random
 import std/sugar
@@ -96,12 +97,22 @@ proc drawTrees(count: int, scaleY: float, seed: int32) {.tags: [Color, Draw, Ran
   # for tree in trees:
     drawTree(tree)
 
-proc update {.exportWasm.} =
+proc ditherFade() {.tags: [Draw].} =
+  let frameWidth = SCREEN_SIZE div 4
+  var offset = 0
+  for y in 0..SCREEN_SIZE:
+    let mask: uint8 = if y mod 2 == 0: 0xCC else: 0x33
+    offset += frameWidth
+    for x in 0..frameWidth:
+      clearMask(FRAMEBUFFER[][offset + x], mask)
+
+proc update {.exportWasm, tags: [Color, Draw, Rand].} =
   tick = (tick + 1) mod 2
   # tickB = (tickB + 1) mod 10
   # DRAW_COLORS[] = 4
   # text("Hello from Nim!", 10, 10)
   drawTrees(count = 10, scaleY = 0.8, seed = 0x1337)
+  ditherFade()
   # if tick == 0:
   #   setColors(0x11)
   #   rect(0, 0, SCREEN_SIZE, SCREEN_SIZE)
