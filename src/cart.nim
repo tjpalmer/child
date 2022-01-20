@@ -38,22 +38,23 @@ func drawPixel(color: uint16, x: int32, y: int32) {.tags: [Color, Draw].} =
   # FRAMEBUFFER[1] = 0x23
   hline(x, y, 1)
 
-func drawLeaves(rng: var Rand, tree: Tree) {.tags: [Color, Draw, Rand].} =
+func drawLeaves(color: uint16, sup: int32, sub: int32, rng: var Rand, tree: Tree) {.tags: [Color, Draw, Rand].} =
   let
     midX = tree.baseX
     midY = tree.baseY - tree.sizeY * 3 div 4
-    sizeX = tree.radius * 2 + tree.sizeY div 3
-    sizeY = tree.sizeY div 2
+    sizeX = tree.radius * 2 + tree.sizeY * 4 div 9
+    sizeY = tree.sizeY * 5 div 9
     radiusX = sizeX div 2
     radiusY = sizeY div 2
-  setColors(0x22)
-  oval(
-    x = midX - sizeX div 2,
-    y = midY - sizeY div 2,
-    width = uint32(sizeX),
-    height = uint32(sizeY),
-  )
-  for i in 1..sizeX * sizeY div 10:
+  # Ovals have bad edge effects.
+  # setColors(0x22)
+  # oval(
+  #   x = midX - sizeX div 2,
+  #   y = midY - sizeY div 2,
+  #   width = uint32(sizeX),
+  #   height = uint32(sizeY),
+  # )
+  for i in 1..sizeX * sizeY * sup div sub:
     let
       xf = rng.randf(2.0) - 1
       yf = rng.randf(2.0) - 1
@@ -61,41 +62,45 @@ func drawLeaves(rng: var Rand, tree: Tree) {.tags: [Color, Draw, Rand].} =
       let
         x = int32(xf * float(radiusX)) + midX
         y = int32(yf * float(radiusY)) + midY
-      drawPixel(3'u16, x, y)
+      drawPixel(color, x, y)
 
 func drawTree(tree: Tree) {.tags: [Color, Draw, Rand].} =
   var rng = initRand(tree.baseY * SCREEN_SIZE + tree.baseX)
   for y in 0..tree.sizeY - 1:
-    let r = int32(round(tree.radius * (tree.sizeY - y) / tree.sizeY))
+    let r = int32(round(tree.radius * (tree.sizeY - y * 2 div 3) / tree.sizeY))
     for x in -r..r:
       let
         rf = (x / r) ^ 3
         lim = rng.randf(1.0'f32)
         color = uint16(if rf < -lim: 4 elif rf > lim: 2 else: 3)
       drawPixel(color = color, x = tree.baseX + x, y = tree.baseY - y)
-  drawLeaves(rng = rng, tree = tree)
+  drawLeaves(color = 2, sup = 3, sub = 1, rng = rng, tree = tree)
+  drawLeaves(color = 3, sup = 1, sub = 10, rng = rng, tree = tree)
+
+# system.onUnhandledException = proc (errorMsg: string) {.nimcall, gcsafe.} =
+#   discard
 
 proc update {.exportWasm.} =
   # tick = (tick + 1) mod 3
   # tickB = (tickB + 1) mod 10
   # DRAW_COLORS[] = 4
   # text("Hello from Nim!", 10, 10)
-  var rng = initRand(0x1337)
+  var rng = initRand(0x1340)
   DRAW_COLORS[] = uint16(rand(2..4))
   DRAW_COLORS[] = 3
-  var trees = collect:
-    for i in 1..10:
-      let
-        edge = SCREEN_SIZE - 1
-        sizeY = rng.randi(50, 80)
-      Tree(
+  # var trees = collect:
+  for i in 1..5:
+    let
+      edge = SCREEN_SIZE - 1
+      sizeY = rng.randi(80, 120)
+      tree = Tree(
         baseX: rng.randi(0, edge),
-        baseY: rng.randi(0, edge),
+        baseY: 120, # rng.randi(0, edge),
         sizeY: sizeY,
         radius: rng.randi(3, sizeY div 10 + 3),
       )
-  trees.sort(func(a, b: Tree): int = a.baseY - b.baseY)
-  for tree in trees:
+  # trees.sort(func(a, b: Tree): int = a.baseY - b.baseY)
+  # for tree in trees:
     drawTree(tree)
 
   # var gamepad = GAMEPAD1[]
