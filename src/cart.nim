@@ -14,7 +14,7 @@ proc start {.exportWasm.} =
 
 # var tick = 0
 # var tickB = 0
-PALETTE[] = [0x180630'u32, 0x841e35, 0xb4742f, 0xf3eac0]
+PALETTE[] = [0x180830'u32, 0x841e35, 0xb4742f, 0xf3eac0]
 
 var posX = 0'i32
 
